@@ -1,0 +1,25 @@
+{
+  "blend_file" : "/path/to/file.blend"
+  "send_file" :  True,
+  "start_frame" : 1,
+  "end_frame" : 10,
+  "user" : "yourSSHuser",
+  "default_bin_file" : "blender",
+  "remote_dest" : "/home/user/tmp1",
+  "hosts":[
+    {
+      "hostname" : "localhost",
+      "bin_file" : "/snap/bin/blender",
+      "enabled"  : True
+    },
+    {
+      "hostname" : "otherHost",
+      "enabled" : True
+    }
+  ],
+  "chunk_size" : 1,
+  "ext" : "exr",
+  "program_frame_rate" : 0.5,
+  "local_output_dir" : "/home/user/tmp2",
+  "engine" : "CYCLES"
+}
