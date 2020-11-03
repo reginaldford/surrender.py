@@ -1,5 +1,5 @@
-# surrender
-Surrender is a python program that uses SSH and SCP turn multiple Linux machines into a render farm for blender.
+# Surrender
+Surrender is a python program that uses SSH and SCP turn multiple Linux machines into a render farm for Blender, the open source 3D modeling and Animation program. Once configured correctly, this program allows an animation to be rendered quicker by tasking other machines to render the frames, sharing the render job by segmenting the frames. This code is only designed for Linux/Unix systems.
 
 ## How to run:
 ### Prepare your machines
