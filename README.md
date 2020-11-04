@@ -7,17 +7,23 @@ Surrender is a python program that uses SSH and SCP turn multiple Linux machines
 * Surrender also has auxilliary functions to:
 1. Clear the render results on the render host.
 **./surrender.py clr_rmt**
+
 or
+
 **./surrender.py <your.yaml> clr_rmt**
 
 2. Clear the render results on the master side.
 **./surrender.py clr**
+
 or
+
 **./surrender.py <your.yaml> clr**
 
 3. Retreive images from a previous job on the render hosts via SCP. Example:
 **./surrender.py get 2020_11_3_13_30_15**
+
 or 
+
 **./surrender.py get <your.yaml> 2020_11_3_13_30_15**
 
 In each example above, **<your.yaml>** is an optional argument to specify the **.yaml** configuration file if it is not the default **surrender.yaml**.
