@@ -1,5 +1,5 @@
 {
-  "blend_file" : "/path/to/file.blend"
+  "blend_file" : "/path/to/file.blend",
   "send_file" :  True,
   "start_frame" : 1,
   "end_frame" : 10,
