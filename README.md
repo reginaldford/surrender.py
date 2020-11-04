@@ -6,6 +6,7 @@ Surrender is a python program that uses SSH and SCP turn multiple Linux machines
 * Once the render is complete, Surrender then retreives all of the rendered images back to the master machine via SCP and provides a metric summary of the render job.
 * Surrender also has auxilliary functions to:
 1. Clear the render results on the render host.
+
 **./surrender.py clr_rmt**
 
 or
@@ -13,6 +14,7 @@ or
 **./surrender.py <your.yaml> clr_rmt**
 
 2. Clear the render results on the master side.
+
 **./surrender.py clr**
 
 or
@@ -20,6 +22,7 @@ or
 **./surrender.py <your.yaml> clr**
 
 3. Retreive images from a previous job on the render hosts via SCP. Example:
+
 **./surrender.py get 2020_11_3_13_30_15**
 
 or 
