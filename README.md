@@ -5,9 +5,22 @@ Surrender is a python program that uses SSH and SCP turn multiple Linux machines
 * Surrender connects to the render machines by SSH and then creates a new directory for the render results and associated data. This directory is always named after the time in the format **YYYY_MM_DD_HH_mm_ss**. Surrender sends a copy of the **.blend** file to each machine. The file should be packed, so that everything necessary to render the image is available in the **.blend** file. Surrender then creates a new directory on each render host for this render, and commands each machine to render different frames of the animation. The segmentation size (in frames) is specified in the configuration file. Surrender relies on Blender's background rendering capabilities throught the command line. Check out.[The Blender Documentation](https://docs.blender.org/manual/en/latest/advanced/command_line/render.html)
 * Once the render is complete, Surrender then retreives all of the rendered images back to the master machine via SCP and provides a metric summary of the render job.
 * Surrender also has auxilliary functions to:
-1. Clear the render results on the render host. **./surrender.py clr_rmt**
-2. Clear the render results on the master side. **./surrender.py clr**
-3. Retreive images from a previous job on the render hosts via SCP. Example: **./surrender.py get 2020_11_3_13_30_15**
+1. Clear the render results on the render host.
+**./surrender.py clr_rmt**
+or
+**./surrender.py <your.yaml> clr_rmt**
+
+2. Clear the render results on the master side.
+**./surrender.py clr**
+or
+**./surrender.py <your.yaml> clr**
+
+3. Retreive images from a previous job on the render hosts via SCP. Example:
+**./surrender.py get 2020_11_3_13_30_15**
+or 
+**./surrender.py get <your.yaml> 2020_11_3_13_30_15**
+
+In each example above, **<your.yaml>** is an optional argument to specify the **.yaml** configuration file if it is not the default **surrender.yaml**.
 
 ## How to run:
 ### Prepare your machines
