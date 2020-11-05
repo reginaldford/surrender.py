@@ -22,7 +22,7 @@ Surrender is a python program that uses SSH and SCP turn multiple Linux machines
 In each example above, **<your.yaml>** is an optional argument to specify the **.yaml** configuration file if it is not the default **surrender.yaml**.
 
 ## How to run:
-### Prerequisits for surrender
+### Prerequisites for surrender
 * To run surrender, a computer needs python3, as well as [paramiko SSH library] (https://github.com/paramiko/paramiko) and [SCP] (https://pypi.org/project/scp/).
 
 ### Prepare your machines
