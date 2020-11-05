@@ -23,7 +23,7 @@ In each example above, **<your.yaml>** is an optional argument to specify the **
 
 ## How to run:
 ### Prerequisites for surrender
-* To run surrender, a computer needs python3, as well as [paramiko SSH library] (https://github.com/paramiko/paramiko) and [SCP] (https://pypi.org/project/scp/).
+* To run surrender, a computer needs python3, as well as [paramiko SSH library](https://github.com/paramiko/paramiko) and [SCP](https://pypi.org/project/scp/).
 
 ### Prepare your machines
 * Each render host will need to be able to run blender, particularly **blender -b**. The master computer will need SSH access to each of the worker hosts. A connection must be possible without using password, but using a key file instead. If the key file is encrypted with a passkey, you can register the passkey on some window managers with the ssh-add command. Once you can SSH to your worker hosts and SCP files to and from them without typing a password, you are ready to use surrender.
