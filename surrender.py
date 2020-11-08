@@ -212,7 +212,7 @@ class frame_job(threading.Thread):
 def space_to(string,desired_length):
     output=string
     if len(string)>desired_length:
-        output=string[0:desired_length/2-1]+".."+string[desired_length/2-1:end]
+        output=string[0:round(desired_length/2)-1]+".."+string[ len(string)-round(desired_length/2) : len(string) - 1]
     if len(string)<desired_length:
         for count in range(desired_length-len(string)):
             output = output+" "
