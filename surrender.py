@@ -141,9 +141,9 @@ def clr_local(config_file):
             print("Removing "+dir_path)
             shutil.rmtree(dir_path)
 
-def collect_results(with_frame_log):
+def collect_results(session):
     for host_id in range(len(session['hosts'])):
-        if len(['frame_log'][host_id])>0:
+        if len(session['frame_log'][host_id])>0:
             print("Collecting images from "+session['hosts'][host_id]['hostname']+ " to "+ session['local_dest'])
             scp=SCPClient(session['connections'][host_id].get_transport())
             for frame_num in session['frame_log'][host_id]:
@@ -151,7 +151,7 @@ def collect_results(with_frame_log):
             print("Collecting logs from "+session['hosts'][host_id]['hostname']+ " to "+ session['local_dest'])
             scp=SCPClient(session['connections'][host_id].get_transport())
             scp.get(session['remote_session_dest']+"/"+"log_"+session["hosts"][host_id]['hostname']+".txt",session['local_dest'])
-            scp.close()
+    scp.close()
 
 def get_data_by_session_name(session_name,config_file):
     print("Getting images and logs from session: "+session_name)
@@ -209,6 +209,7 @@ class frame_job(threading.Thread):
             for f in range(self.frame+1,min(self.frame+session['chunk_size'],session['end_frame']+1)):
                 session['frame_log'][self.my_host_id].append(f)
         session['host_feedback'][self.my_host_id] = "Opening File, beginning frame "+str(self.frame)
+        print("HOST: "+session['hosts'][self.my_host_id]['hostname']+" CMD: "+self.cmd)
         return send_cmd(session,self.my_host_id,self.cmd)
 
 def space_to(string,length):
@@ -236,7 +237,7 @@ def print_feedback(session,current_frame):
     for host_id in range(len(session['hosts'])):
         print(space_to(session['hosts'][host_id]['hostname'],16)+" : "+session['host_feedback'][host_id])
 
-def any_hosts_busy():
+def any_hosts_busy(session):
     for host_id in range(len(session['hosts'])):
         if session['busy_state'][host_id] == True:
             return True
@@ -294,7 +295,7 @@ def compute_frames(session):
             fj = frame_job(session,available_host,current_frame,cmd)
             current_frame=current_frame+session['chunk_size']
             fj.start()
-    while any_hosts_busy() :
+    while any_hosts_busy(session) :
         time.sleep(session['program_frame_rate'])
         print_feedback(session,current_frame)
 
@@ -305,7 +306,7 @@ def make_remote_session_dest(session):
             print("Making directory "+session['remote_session_dest']+" on "+ session['hosts'][host_id]['hostname'])
             send_cmd(session,host_id,"mkdir -p "+session['remote_session_dest'])
 
-def distribute_blendfile(session):
+def distribute_blend_file(session):
     for host_id in range(len(session['hosts'])):
         print("Sending .blend file "+session['blend_file']+" to "+ session['hosts'][host_id]['hostname']+":"+session['remote_session_dest'])
         scp=SCPClient(session['connections'][host_id].get_transport())
@@ -333,7 +334,7 @@ def run_cluster(config_file):
     connect_to_hosts(session)
     make_remote_session_dest(session)
     if session["send_file"]==True:
-        distribute_blendfile(session)
+        distribute_blend_file(session)
     compute_frames(session)
     collect_results(session)
     close_connections(session)
@@ -348,7 +349,7 @@ def run_cluster(config_file):
         print("Percentage of Total Frames: "+str(percentage) + " %\n")
     end_time=time.time()
     time_in_seconds = round(end_time-session['start_time'])
-    print("Total Time Elapsed: " + pretty_timei(time_in_seconds));
+    print("Total Time Elapsed: " + pretty_time(time_in_seconds));
 
 def print_help():
     print("Surrender v 0.1")
