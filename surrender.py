@@ -21,7 +21,10 @@ def connect_to_hosts(session):
         session['connections'][host_id] = client
         client.load_system_host_keys()
         print("Connecting via SSH to "+session['hosts'][host_id]['hostname'])
-        client.connect(session['hosts'][host_id]['hostname'], username=session['user'])
+        port = session['default_ssh_port']
+        if 'ssh_port' in  session['hosts'][host_id]:
+            port = int(session['hosts'][host_id]['ssh_port'])
+        client.connect(session['hosts'][host_id]['hostname'], username=session['user'],port=port)
 
 def close_connections(session):
     if len(session['connections']) > 0:
@@ -41,7 +44,7 @@ def send_cmd(session,host_id,cmd):
 
     # Print output of command. Will wait for command to finish.
     for line in stdout:
-        parseLine(session,line,host_id)
+        parse_line(session,line,host_id)
     for line in stderr:
         print("!! "+line.strip('\n'))
     # We don't use stdin
@@ -51,11 +54,10 @@ def send_cmd(session,host_id,cmd):
     stderr.close()
     stat = stdout.channel.recv_exit_status()
     if stat!=0:
-        print("ERROR on "+str(session['hosts'][host_id])+"! From command: "+cmd)
+        print("ERROR on "+str(session['hosts'][host_id]['hostname'])+"! From command: "+cmd)
         print("Error code "+str(stat))
     return stat
 
-#session must be a global?
 def signal_handler(sig,frame):
     print("Program received signal to close...")
     for s in surrender_sessions:
@@ -70,11 +72,6 @@ def parse_config(config_file):
     session = config #store the actual values
     surrender_sessions.append(session)
 
-    #computed aspects of session
-    session['session_name']=now.strftime("%Y_%m_%d_%H_%M_%S")
-    session['remote_session_dest']= config['remote_dest']+"/"+config['session_name']
-    session['local_dest']= config['local_output_dir']+"/"+config['session_name']
-    session['remote_blend_file']=config['remote_session_dest']+"/"+os.path.basename(config['blend_file'])
     ##disable the specified hosts:
     host_id=0
     while host_id < len(session['hosts']):
@@ -151,7 +148,7 @@ def collect_results(session):
             print("Collecting logs from "+session['hosts'][host_id]['hostname']+ " to "+ session['local_dest'])
             scp=SCPClient(session['connections'][host_id].get_transport())
             scp.get(session['remote_session_dest']+"/"+"log_"+session["hosts"][host_id]['hostname']+".txt",session['local_dest'])
-    scp.close()
+            scp.close()
 
 def get_data_by_session_name(session_name,config_file):
     print("Getting images and logs from session: "+session_name)
@@ -167,7 +164,7 @@ def get_data_by_session_name(session_name,config_file):
         scp.close()
     close_connections(session)
 
-def parseLine(session,line,host_id):
+def parse_line(session,line,host_id):
     if line[0:12]=="Blender quit":
         session['host_feedback'][host_id]="Completed chunk"
         session['busy_state'][host_id]=False
@@ -212,10 +209,12 @@ class frame_job(threading.Thread):
         print("HOST: "+session['hosts'][self.my_host_id]['hostname']+" CMD: "+self.cmd)
         return send_cmd(session,self.my_host_id,self.cmd)
 
-def space_to(string,length):
+def space_to(string,desired_length):
     output=string
-    if len(string)<length:
-        for count in range(length-len(string)):
+    if len(string)>desired_length:
+        output=string[0:desired_length/2-1]+".."+string[desired_length/2-1:end]
+    if len(string)<desired_length:
+        for count in range(desired_length-len(string)):
             output = output+" "
     return output
 
@@ -326,8 +325,27 @@ def pretty_time(time_in_seconds):
         pretty_time =hours + " h " + minutes + " m " + seconds + " s"
     return pretty_time
 
-def run_cluster(config_file):
+def run_cluster(config_file,user_session_name):
     session = parse_config(config_file)
+    #check for 2 specs of session name
+    if "session_name" in session:
+        if user_session_name!="":
+            print("Session name is specified in both config and command argument! Exiting")
+            sys.exit(1)
+
+    if user_session_name!="":
+        session['session_name']=user_session_name
+    else:
+        if "session_name" not in session:
+            session['session_name']=now.strftime("%Y_%m_%d_%H_%M_%S")
+
+    #if session name is specified, it will simply be used as session['session_nanme']
+
+    #computed aspects of session
+    session['remote_session_dest']= session['remote_dest']+"/"+session['session_name']
+    session['local_dest']= session['local_output_dir']+"/"+session['session_name']
+    session['remote_blend_file']=session['remote_session_dest']+"/"+os.path.basename(session['blend_file'])
+        
     init(session)
     exit_if_no_hosts(session['hosts'])
     setup_render_session(session)
@@ -352,7 +370,7 @@ def run_cluster(config_file):
     print("Total Time Elapsed: " + pretty_time(time_in_seconds));
 
 def print_help():
-    print("Surrender v 0.1")
+    print("Surrender v 0.2")
     print("USAGES:")
     print("NOTE: Config file is ALWAYS optional and defaults to surrender.yaml")
     print("Config file MUST have .yaml extension")
@@ -366,13 +384,17 @@ def print_help():
     print("surrender.py <config_file> get <session_id>")
 
 now=datetime.now()
+user_session_name=""
 
 if len(sys.argv) > 1:
     possible_file, possible_extension = os.path.splitext(os.path.sys.argv[1])
     if possible_extension == ".yaml":
         config_file = sys.argv[1]
+        if len(sys.argv) > 2:
+            user_session_name=sys.argv[2]
     else:
         config_file = "surrender.yaml"
+        user_session_name=sys.argv[1]
 else:
     config_file = "surrender.yaml"
 
@@ -391,6 +413,7 @@ for i in range(1,min(2,len(sys.argv))):
             get_data_by_session_name(sys.argv[i+1],config_file)
             sys.exit(0)
         else:
-            print("Session name must be provided after 'get_data'")
+            print("Session name must be provided after 'get'")
             sys.exit(1)
-run_cluster(config_file)
+
+run_cluster(config_file,user_session_name)

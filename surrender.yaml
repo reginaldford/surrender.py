@@ -1,25 +1,29 @@
 {
-  "blend_file" : "/path/to/file.blend", #Consider packing the file
-  "send_file" :  True,                  #Whether to send a copy over scp
+  # uncoomments the next line to specify session name here
+  # "session_name":'test1',
+  "blend_file" : "/path/to/file.blend", # Consider packing the file
+  "send_file" :  True,                  # Whether to send a copy over scp
   "start_frame" : 1,
   "end_frame" : 10,
-  "user" : "yourSSHuser",               #User for ssh access to render hosts
-  "default_bin_file" : "blender",       #Binary file for blender, if not specified in "hosts"
-  "remote_dest" : "/home/user/tmp1",    #Where to story render date on the render hosts
+  "user" : "yourSSHuser",               # User for ssh access to render hosts
+  "default_bin_file" : "blender",       # Binary file for blender, if not specified in "hosts"
+  "remote_dest" : "/home/user/tmp1",    # Where to story render date on the render hosts
+  "default_ssh_port": 22,
   "hosts":[
     {
-      "hostname" : "localhost",         #Consider setting easy names in your /etc/hosts file
-      "bin_file" : "/snap/bin/blender", #The file to execute for blender -b, not the default value
-      "enabled"  : True                 #Whether to use this machine in the render job
+      "hostname" : "localhost",         # Consider setting easy names in your /etc/hosts file
+      "bin_file" : "/snap/bin/blender", # The file to execute for blender -b, not the default value
+      "enabled"  : True                 # Whether to use this machine in the render job
     },
     {
-      "hostname" : "otherHost",         #This host would use the default_bin_file from above
-      "enabled" : False
+      "hostname" : "otherHost",         # This host would use the default_bin_file from above
+      "enabled" : False,
+      "ssh_port": 22                    # example of setting host-specific ssh port
     }
   ],
-  "chunk_size" : 1, #The number of frames to send at a time to a render host. 
-  "ext" : "exr",    #exr, png, tiff, jpg, tiff, sgi, rgb, bw, bmp, tga, cin, dpx, jp2, j2c
-  "program_frame_rate" : 0.5, #Number of frames per second for display and checking for available hosts for work
-  "local_output_dir" : "/home/user/tmp2", #Where to store render data on master after receiving from render hosts
-  "engine" : "CYCLES" # CYCLES , BLENDER_EVEE , or BLENDER_WORKBENCH
+  "chunk_size" : 1, # The number of frames to send at a time to a render host. 
+  "ext" : "exr",    # exr, png, tiff, jpg, tiff, sgi, rgb, bw, bmp, tga, cin, dpx, jp2, j2c
+  "program_frame_rate" : 0.5, # Number of frames per second for display and checking for available hosts for work
+  "local_output_dir" : "/home/user/tmp2", # Where to store render data on master after receiving from render hosts
+  "engine" : "CYCLES" # CYCLES , BLENDER_EEVEE , or BLENDER_WORKBENCH
 }
