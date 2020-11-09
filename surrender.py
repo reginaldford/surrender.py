@@ -64,13 +64,22 @@ def signal_handler(sig,frame):
         close_connections(s)
     sys.exit(0)
 
-def parse_config(config_file):
+def parse_config(config_file,user_session_name):
     print("Parsing session file "+config_file)
     with open(config_file) as file:
         config = yaml.load(file,Loader=yaml.FullLoader)
     #We trust the config
     session = config #store the actual values
     surrender_sessions.append(session)
+    #computed aspects of session
+    if user_session_name!="":
+        session['session_name']=user_session_name
+    else:
+        if "session_name" not in session:
+            session['session_name']=now.strftime("%Y_%m_%d_%H_%M_%S")
+    session['remote_session_dest']= session['remote_dest']+"/"+sys.argv[len(sys.argv)-1]
+    session['remote_blend_file']=session['remote_session_dest']+"/"+os.path.basename(session['blend_file'])
+    session['local_dest']= session['local_output_dir']+"/"+session['session_name']
 
     ##disable the specified hosts:
     host_id=0
@@ -112,7 +121,7 @@ def setup_render_session(session):
 
 def clear_remote(config_file):
     print("Clearing remote cache directories")
-    session=parse_config(config_file)
+    session=parse_config(config_file,"")
     init(session)
     exit_if_no_hosts(session['hosts'])
     connect_to_hosts(session)
@@ -126,7 +135,7 @@ def clear_remote(config_file):
 
 def clr_local(config_file):
     print("Clearing local cache directory")
-    session=parse_config(config_file)
+    session=parse_config(config_file,"")
     init(session)
     exit_if_no_hosts(session['hosts'])
     print("Removing directories from "+session['local_output_dir'])
@@ -152,10 +161,11 @@ def collect_results(session):
 
 def get_data_by_session_name(session_name,config_file):
     print("Getting images and logs from session: "+session_name)
-    session=parse_config(config_file)
+    session=parse_config(config_file,session_name)
+    session['remote_session_dest']= session['remote_dest']+"/"+session_name
     init(session)
     connect_to_hosts(session)
-    recovery_dest = os.path.dirname(session['local_dest'])
+    recovery_dest = os.path.dirname(session['local_output_dir']+"/"+session_name)
     for host_id in range(len(session['hosts'])):
         scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=30)
         print("Transferring "+session['hosts'][host_id]['hostname']+":"+session['remote_dest']+"/"+session_name+" to "+recovery_dest)
@@ -326,26 +336,11 @@ def pretty_time(time_in_seconds):
     return pretty_time
 
 def run_cluster(config_file,user_session_name):
-    session = parse_config(config_file)
-    #check for 2 specs of session name
-    if "session_name" in session:
-        if user_session_name!="":
-            print("Session name is specified in both config and command argument! Exiting")
-            sys.exit(1)
-
-    if user_session_name!="":
-        session['session_name']=user_session_name
-    else:
-        if "session_name" not in session:
-            session['session_name']=now.strftime("%Y_%m_%d_%H_%M_%S")
+    session = parse_config(config_file,user_session_name)
+    session['remote_session_dest']= session['remote_dest']+"/"+session['session_name']
 
     #if session name is specified, it will simply be used as session['session_nanme']
 
-    #computed aspects of session
-    session['remote_session_dest']= session['remote_dest']+"/"+session['session_name']
-    session['local_dest']= session['local_output_dir']+"/"+session['session_name']
-    session['remote_blend_file']=session['remote_session_dest']+"/"+os.path.basename(session['blend_file'])
-        
     init(session)
     exit_if_no_hosts(session['hosts'])
     setup_render_session(session)
@@ -398,7 +393,7 @@ if len(sys.argv) > 1:
 else:
     config_file = "surrender.yaml"
 
-for i in range(1,min(2,len(sys.argv))):
+for i in range(1,len(sys.argv)):
     if sys.argv[i] == "clr_rmt":
         clear_remote(config_file)
         sys.exit(0)
