@@ -25,7 +25,7 @@ Surrender is a python program that uses SSH and SCP turn multiple Linux machines
   Note that closing the program before a render session completes will allow hosts to complete what ever chunk they are working on.
   The program does not STOP the render hosts before they complete a chunk. You can kill blender programs on a host with **killall blender** , but beware that this also will kill all running instances of blender unrelated to the cluster session. To avoid this, make a simlink to /usr/bin/blender_job and configure surrender to use blender_job instead, so that killall blender_jobs will not kill other blender instances that are not related to surrender.
   
-** Surrender also has auxilliary functions
+ ### Surrender also has auxilliary functions
 In each command, **\<your.yaml\>** is optional and defaults to **surrender.yaml**
 
 1. Clear the render results on the render host.
