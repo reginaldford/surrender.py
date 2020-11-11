@@ -167,7 +167,7 @@ def get_data_by_session_name(session_name,config_file):
     connect_to_hosts(session)
     recovery_dest = os.path.dirname(session['local_output_dir']+"/"+session_name)
     for host_id in range(len(session['hosts'])):
-        scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=30)
+        scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=60)
         print("Transferring "+session['hosts'][host_id]['hostname']+":"+session['remote_dest']+"/"+session_name+" to "+recovery_dest)
         scp.get(session['remote_dest']+"/"+session_name,recovery_dest,recursive=True)
         print("Closing SCP Connection to "+session['hosts'][host_id]['hostname'])
@@ -189,7 +189,8 @@ def parse_line(session,line,host_id):
             while line[counter] != ' ':
                 current_frame=current_frame + line[counter]
                 counter = counter + 1
-            extra_frames=(int(current_frame) - 1) % session['chunk_size']
+            #calculate the frames we've done within this chunk with modulo
+            extra_frames=((int(current_frame) - session['start_frame'])) % session['chunk_size'] 
             if session['specific_frames_completed'][host_id] != extra_frames:
                 session['specific_frames_completed'][host_id] = extra_frames
                 session["time_last_frame_completed"] = time.time()
@@ -296,7 +297,6 @@ def compute_frames(session):
                 cmd = cmd + session['blend_file']
 
             cmd = cmd + "\" -E " + session["engine"]
-
             cmd = cmd + " -o \"" + session['remote_session_dest'] + "/######." + ext + "\" -F " + format_string
             cmd = cmd + " -s " + str(current_frame) + " -e " + str(last_frame_in_chunk) + " -a "
             cmd = cmd + " | tee -a \""+session['remote_session_dest']+"/log_"+session['hosts'][available_host]['hostname']+".txt\""
@@ -339,8 +339,7 @@ def run_cluster(config_file,user_session_name):
     session = parse_config(config_file,user_session_name)
     session['remote_session_dest']= session['remote_dest']+"/"+session['session_name']
 
-    #if session name is specified, it will simply be used as session['session_nanme']
-
+    #if session name is specified, it will simply be used as session['session_name']
     init(session)
     exit_if_no_hosts(session['hosts'])
     setup_render_session(session)
