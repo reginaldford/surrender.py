@@ -95,12 +95,9 @@ def init(session):
     signal.signal(signal.SIGINT,signal_handler)
     session['start_time'] = time.time()
     session['connections']=[]
-    session['frames_completed']=0
-    session['specific_frames_completed']=[]
     session['time_last_frame_completed']=time.time()
     for host_id in range(len(session['hosts'])):
         session['connections'].append(False)
-        session['specific_frames_completed'].append(0)
 
 def setup_render_session(session):
     print("Begining Render Session")
@@ -109,15 +106,18 @@ def setup_render_session(session):
         os.mkdir(session['local_output_dir'])
     if not os.path.isdir(session['local_dest']):
         os.mkdir(session['local_dest'])
+    session['frames_completed']=0
     session['busy_state'] =[]
     session['host_feedback']=[]
     session['connections']=[]
     session['frame_log']=[]
+    session['current_frame']=[]
     for host_id in range(len(session['hosts'])):
         session['busy_state'].append(False)
         session['host_feedback'].append('')
         session['connections'].append(False)
         session['frame_log'].append([])
+        session['current_frame'].append(0)
 
 def clear_remote(config_file):
     print("Clearing remote cache directories")
@@ -178,9 +178,9 @@ def parse_line(session,line,host_id):
     if line[0:12]=="Blender quit":
         session['host_feedback'][host_id]="Completed chunk"
         session['busy_state'][host_id]=False
-        session['frames_completed']=session['frames_completed'] + session['chunk_size']
-        session['specific_frames_completed'][host_id] = 0
         session["time_last_frame_completed"] = time.time()
+        session['frames_completed']=session['frames_completed']+1
+        session['current_frame'][host_id]=0#current_frame=0 signifies unknown frame
     else:
         if line[0:4] == 'Fra:':
             session['host_feedback'][host_id] = line.strip('\n')
@@ -189,11 +189,12 @@ def parse_line(session,line,host_id):
             while line[counter] != ' ':
                 current_frame=current_frame + line[counter]
                 counter = counter + 1
-            #calculate the frames we've done within this chunk with modulo
-            extra_frames=((int(current_frame) - session['start_frame'])) % session['chunk_size'] 
-            if session['specific_frames_completed'][host_id] != extra_frames:
-                session['specific_frames_completed'][host_id] = extra_frames
+            if session['current_frame'][host_id]==0:#now we know the current frame for this host
+                session['current_frame'][host_id]=current_frame
+            elif session['current_frame'][host_id]!=current_frame:
+                session['current_frame'][host_id]=current_frame
                 session["time_last_frame_completed"] = time.time()
+                session['frames_completed']=session['frames_completed']+1
 
 def find_available_host(session):
     host_id=0
@@ -232,17 +233,20 @@ def space_to(string,desired_length):
 def print_feedback(session,current_frame):
     print()#just 1 space from last display
     completed = session['frames_completed']
-    for host_id in range(len(session['hosts'])):
-        completed+=session['specific_frames_completed'][host_id]
     num_frames = session['end_frame']-session['start_frame']+1
-    update_line = "Completed "+str(completed) + " frames of " + str(num_frames)
-    update_line = update_line + " [ " +str(round(100 * (completed/num_frames))) + " % ]"
-    print("Time elapsed: "+pretty_time(time.time()-session['start_time']))
+
+
+    print("Session: "+session['session_name'] + " | Time elapsed: "+pretty_time(time.time()-session['start_time']))
+    update_line = "Completed "+str(completed) + " / " + str(num_frames) + " frames"
+    update_line = update_line + " [ " +str(round((100.0*completed/num_frames))) + " % ]"
     if completed > 0:
         time_elapsed = session['time_last_frame_completed']-session['start_time']
         avg_frame_time = time_elapsed/completed
         seconds_left = round((num_frames-completed) * avg_frame_time)
-        update_line = update_line + " ETA: " + pretty_time(seconds_left)
+        #let's get the est time of completion
+        eta = datetime.fromtimestamp(session['time_last_frame_completed']+ seconds_left)
+        update_line = update_line + " | Remaining: " + pretty_time(seconds_left)+ " | ETA: "+eta.strftime('%Y-%m-%d %H:%M:%S')
+        update_line = update_line + " | Avg Frame Time: " + pretty_time(avg_frame_time)
     print(update_line)
     for host_id in range(len(session['hosts'])):
         print(space_to(session['hosts'][host_id]['hostname'],16)+" : "+session['host_feedback'][host_id])
@@ -309,11 +313,10 @@ def compute_frames(session):
         print_feedback(session,current_frame)
 
 def make_remote_session_dest(session):
+    print("Creating session directory on each host:")
     for host_id in range(len(session['hosts'])):
-        print("Creating session directory on each host:")
-        for host_id in range(len(session['hosts'])):
-            print("Making directory "+session['remote_session_dest']+" on "+ session['hosts'][host_id]['hostname'])
-            send_cmd(session,host_id,"mkdir -p "+session['remote_session_dest'])
+        print("Making directory "+session['remote_session_dest']+" on "+ session['hosts'][host_id]['hostname'])
+        send_cmd(session,host_id,"mkdir -p "+session['remote_session_dest'])
 
 def distribute_blend_file(session):
     for host_id in range(len(session['hosts'])):
@@ -351,6 +354,7 @@ def run_cluster(config_file,user_session_name):
     collect_results(session)
     close_connections(session)
     print("\n\nSUMMARY:")
+    print("Surrender Session Name: "+session['session_name'])
     print("Output location: "+session['local_dest'])
     for host_id in range(len(session['hosts'])):
         print(session['hosts'][host_id]['hostname']+":")
