@@ -141,21 +141,28 @@ def clr_local(config_file):
     print("Removing directories from "+session['local_output_dir'])
     ls_list = os.listdir(session['local_output_dir'])
     print(ls_list)
-    for thing in ls_list:
-        dir_path = session['local_output_dir']+'/'+thing
+    for file_or_dir in ls_list:
+        dir_path = session['local_output_dir']+'/'+file_or_dir
         if os.path.isdir(dir_path):
             print("Removing "+dir_path)
             shutil.rmtree(dir_path)
+
+last_fname = ""
+def scp_progress(filename,size,sent):
+    global last_fname
+    fname_str = str(filename)
+    if(filename!=last_fname):
+        last_fname=filename
+        print(fname_str[2:len(fname_str)-1])
 
 def collect_results(session):
     for host_id in range(len(session['hosts'])):
         if len(session['frame_log'][host_id])>0:
             print("Collecting images from "+session['hosts'][host_id]['hostname']+ " to "+ session['local_dest'])
-            scp=SCPClient(session['connections'][host_id].get_transport())
+            scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=60,progress=scp_progress)
             for frame_num in session['frame_log'][host_id]:
                 scp.get(session['remote_session_dest']+"/"+str(frame_num).zfill(6)+"."+session['ext'],session['local_dest'])
             print("Collecting logs from "+session['hosts'][host_id]['hostname']+ " to "+ session['local_dest'])
-            scp=SCPClient(session['connections'][host_id].get_transport())
             scp.get(session['remote_session_dest']+"/"+"log_"+session["hosts"][host_id]['hostname']+".txt",session['local_dest'])
             scp.close()
 
@@ -167,7 +174,7 @@ def get_data_by_session_name(session_name,config_file):
     connect_to_hosts(session)
     recovery_dest = os.path.dirname(session['local_output_dir']+"/"+session_name)
     for host_id in range(len(session['hosts'])):
-        scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=60)
+        scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=60,progress=scp_progress)
         print("Transferring "+session['hosts'][host_id]['hostname']+":"+session['remote_dest']+"/"+session_name+" to "+recovery_dest)
         scp.get(session['remote_dest']+"/"+session_name,recovery_dest,recursive=True)
         print("Closing SCP Connection to "+session['hosts'][host_id]['hostname'])
@@ -321,7 +328,7 @@ def make_remote_session_dest(session):
 def distribute_blend_file(session):
     for host_id in range(len(session['hosts'])):
         print("Sending .blend file "+session['blend_file']+" to "+ session['hosts'][host_id]['hostname']+":"+session['remote_session_dest'])
-        scp=SCPClient(session['connections'][host_id].get_transport())
+        scp=SCPClient(session['connections'][host_id].get_transport(),socket_timeout=60,progress=scp_progress)
         scp.put(session['blend_file'],session['remote_session_dest']+"/"+os.path.basename(session['blend_file']))
         scp.close()
 
