@@ -20,9 +20,9 @@ Surrender.py (surrender for short) is a python program that uses SSH and SCP tur
 **chmod +x surrender.py** 
 
 ### Running the cluster
-* Run a cluster with surrender with any of these commands:
+* Run a cluster with surrender:
  The config file is optional and defaults to **surrender.yaml**
- The session name is optional and defaults to the current time with the format:  **YYYY_MM_DD_HH_mm_ss**.
+ The session name is optional and defaults to the date and time of execution.
 
 **surrender.py \<your config file.yaml\> \<session name\>**
 
