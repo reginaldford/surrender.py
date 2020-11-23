@@ -1,5 +1,5 @@
 # Surrender.py
-Surrender.py (surrender for short) uses SSH and SCP to render animations using other computers. Surrender allows an animation to be rendered faster by splitting up the frames to render among other hosts. During a render session, if a render host becomes available to do more work, it is assigned to render the next chunk of frames that need to be rendered, until all frames are rendered and finally sent back to the master host.
+Surrender.py is a single file python program that uses SSH and SCP to render animations on other computers. Surrender renders animations faster by splitting up the frames to render among other hosts. During a render session, if a render host becomes available to do more work, it is assigned to render the next set of frames (chunk) that need to be rendered, until all frames are rendered and finally sent back to the master host.
 
 ## How does it work?
 * Surrender connects to the render hosts by SSH and then creates a new directory for the render results and associated data. The directory will have the session name, which can be specified in the configuration file or in the command line. If no session name is given, this directory is named after the time that the program is executed in the format **YYYY_MM_DD_HH_mm_ss**. Surrender sends a copy of the **.blend** file to each machine to store into this newly created directory. The file should be packed, so that necessary resources are available to the render machines when they open the file. Surrender then commands each host to render different frames of the animation according to the config file. Whenever a host finishes a chunk of frames, Surrender commands the host to do the next chunk of frames or Surrender has completed and prints a statistical summary of the session. The chunk size (in frames) is specified in the configuration file. The master can help render, by allowing SSH/SCP to the loopback address and adding **127.0.0.1** to as a host in the config file. Surrender relies on Blender's background rendering capabilities from the command line. Check out [The Blender Documentation](https://docs.blender.org/manual/en/latest/advanced/command_line/render.html)
@@ -16,8 +16,9 @@ Surrender.py (surrender for short) uses SSH and SCP to render animations using o
 * Copy and or Edit the surrender.yaml file to describe your cluster and render needs.
 
 ## Installing surrender.py
-* To install surrender.py, just copy **surrender.py** into your **/usr/bin** directory and make sure you can execute the file by using:
-**chmod +x surrender.py** 
+* Surrender.py is a single standalone file, so it can be run by using **./surrender.py**, but installing it can be more convenient.
+* To install surrender.py, just copy **surrender.py** into your **/usr/bin** directory and make sure that you can execute the file:
+**chmod +x /usr/bin/surrender.py** 
 
 ### Running the cluster
 * Run a cluster with surrender:
@@ -28,7 +29,7 @@ Surrender.py (surrender for short) uses SSH and SCP to render animations using o
 
 * **ctrl+c** will send an exit signal, which will close all of the open SSH/SCP connections
   Note that closing the program before a render session completes will allow hosts to complete what ever chunk they are working on.
-  The program does not STOP the render hosts before they complete a chunk. You can kill blender programs on a host with **killall blender** , but beware that this also will kill all running instances of blender unrelated to the cluster session. To avoid this, make a simlink to /usr/bin/blender_job and configure surrender to use blender_job instead, so that killall blender_jobs will not kill other blender instances that are not related to surrender.
+  The program does not STOP the render hosts before they complete a chunk. You can kill blender programs on a host with **killall blender** , but beware that this also will kill all running instances of blender unrelated to the cluster session. Surrender.py will eventually have a feature to kill the render jobs and continue previous jobs.
   
  ### Surrender also has auxilliary functions
 In each command, **\<your.yaml\>** is optional and defaults to **surrender.yaml**
