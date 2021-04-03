@@ -7,7 +7,7 @@
   "end_frame" : 10,
   "user" : "yourSSHuser",               # User for ssh access to render hosts
   "default_bin_file" : "blender",       # Binary file for blender, if not specified in "hosts"
-  "remote_dest" : "/home/user/tmp1",    # Where to story render date on the render hosts
+  "remote_dest" : "/home/user/tmp1",    # Where to store rendered image files on the render hosts
   "default_ssh_port": 22,
   "hosts":[
     {
